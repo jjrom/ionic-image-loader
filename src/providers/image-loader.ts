@@ -261,6 +261,35 @@ export class ImageLoader {
       this.processQueue();
     };
 
+    // START: jrom from https://github.com/stephenandrews/ionic-image-loader/commit/8c0145ee9345f216202c4721af2de8707137ed1d
+    const localDir = this.file.cacheDirectory + this.config.cacheDirectoryName;
+    const localPath = this.createFileName(currentItem.imageUrl);
+    const tempPath = localPath + "_t";
+
+    transfer.download(currentItem.imageUrl, localDir + "/" + tempPath, Boolean(this.config.fileTransferOptions.trustAllHosts), this.config.fileTransferOptions)
+      .then((file: FileEntry) => {
+        return this.file.moveFile(localDir, tempPath, localDir, localPath);
+      })
+      .then((file: Entry) => {
+        if (this.shouldIndex) {
+          this.addFileToIndex(file).then(this.maintainCacheSize.bind(this));
+        }
+        return this.getCachedImagePath(currentItem.imageUrl);
+      })
+      .then((localUrl) => {
+        currentItem.resolve(localUrl);
+        done();
+      })
+      .catch((e) => {
+        currentItem.reject();
+        this.throwError(e);
+        done();
+      });
+
+    // END: jrom
+    
+    /*
+    
     const localPath = this.file.cacheDirectory + this.config.cacheDirectoryName + '/' + this.createFileName(currentItem.imageUrl);
 
     transfer.download(currentItem.imageUrl, localPath, Boolean(this.config.fileTransferOptions.trustAllHosts), this.config.fileTransferOptions)
@@ -279,6 +308,7 @@ export class ImageLoader {
         this.throwError(e);
         done();
       });
+      */
 
   }
 
